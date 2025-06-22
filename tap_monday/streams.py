@@ -43,8 +43,8 @@ class WorkspacesStream(MondayStream):
 class BoardsStream(MondayStream):
     name = "boards"
     primary_keys = ["id"]
-    replication_key = "updated_at"
-    replication_method = "INCREMENTAL"
+    # replication_key = "updated_at"
+    # replication_method = "INCREMENTAL"
     schema = th.PropertiesList(
         th.Property("id", th.StringType),
         th.Property("name", th.StringType),
