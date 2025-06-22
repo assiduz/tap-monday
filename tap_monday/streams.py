@@ -43,40 +43,103 @@ class WorkspacesStream(MondayStream):
 class BoardsStream(MondayStream):
     name = "boards"
     primary_keys = ["id"]
+    replication_key = "updated_at"
+    replication_method = "INCREMENTAL"
     schema = th.PropertiesList(
-        th.Property("id", th.IntegerType),
+        th.Property("id", th.StringType),
         th.Property("name", th.StringType),
         th.Property("description", th.StringType),
         th.Property("state", th.StringType),
-        th.Property("updated_at", th.DateTimeType),
-        th.Property("workspace_id", th.IntegerType),
-        th.Property("items", th.ArrayType(th.ObjectType(
-            th.Property("id", th.IntegerType),
-            th.Property("created_at", th.DateTimeType),
+        th.Property("board_folder_id", th.StringType),
+        th.Property("board_kind", th.StringType),
+        th.Property("communication", th.StringType),
+        th.Property("creator", th.ObjectType(
+            th.Property("id", th.StringType),
             th.Property("name", th.StringType),
-            th.Property("state", th.StringType),
-            th.Property("updated_at", th.DateTimeType),
-            th.Property("board_id", th.IntegerType),
-            th.Property("column_values", th.ArrayType(
-                th.ObjectType(
+            th.Property("email", th.StringType),
+        )),
+        th.Property("groups", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("title", th.StringType),
+        ))),
+        th.Property("item_terminology", th.StringType),
+        th.Property("items_count", th.IntegerType),
+        th.Property("items_page", th.ObjectType(
+            th.Property("items", th.ArrayType(th.ObjectType(
+                th.Property("id", th.StringType),
+                th.Property("name", th.StringType),
+                th.Property("column_values", th.ArrayType(th.ObjectType(
                     th.Property("id", th.StringType),
-                    th.Property("title", th.StringType),
                     th.Property("text", th.StringType),
                     th.Property("type", th.StringType),
                     th.Property("value", th.StringType),
-                    # th.ObjectType(
-                    #     th.Property("changed_at", th.DateTimeType),
-                    #     th.Property("personsAndTeams", th.ArrayType(
-                    #         th.ObjectType(
-                    #             th.Property("id", th.IntegerType),
-                    #             th.Property("kind", th.StringType)
-                    #         )
-                    #     ))
-                    # )),
-                    th.Property("additional_info", th.StringType),
-                )
+                )))
+            )))
+        )),
+        th.Property("owners", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("email", th.StringType),
+        ))),
+        th.Property("permissions", th.StringType),
+        th.Property("subscribers", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("email", th.StringType),
+        ))),
+        th.Property("tags", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+        ))),
+        th.Property("team_owners", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+        ))),
+        th.Property("team_subscribers", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+        ))),
+        th.Property("top_group", th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("title", th.StringType),
+        )),
+        th.Property("type", th.StringType),
+        th.Property("updated_at", th.DateTimeType),
+        th.Property("updates", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("body", th.StringType),
+            th.Property("created_at", th.DateTimeType),
+            th.Property("creator", th.ObjectType(
+                th.Property("id", th.StringType),
+                th.Property("name", th.StringType),
             )),
         ))),
+        th.Property("url", th.StringType),
+        th.Property("views", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("type", th.StringType),
+            th.Property("settings_str", th.StringType),
+            th.Property("view_specific_data_str", th.StringType),
+        ))),
+        th.Property("workspace", th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+        )),
+        th.Property("workspace_id", th.StringType),
+        th.Property("columns", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("title", th.StringType),
+            th.Property("type", th.StringType),
+        ))),
+        th.Property("activity_logs", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("entity", th.StringType),
+            th.Property("event", th.StringType),
+            th.Property("data", th.StringType),
+            th.Property("user_id", th.StringType),
+            th.Property("created_at", th.DateTimeType),
+        )))
     ).to_dict()
 
     def get_url_params(
@@ -87,52 +150,142 @@ class BoardsStream(MondayStream):
             "board_limit": self.config["board_limit"]
         }
 
-
     @property
     def query(self) -> str:
-        return """
+        graph_query = """ 
             query ($page: Int!, $board_limit: Int!) {
                 boards(limit: $board_limit, page: $page, order_by: created_at) {
+                    id
+                    name
+                    description
+                    state
+                    updated_at
+                    board_folder_id
+                    board_kind
+                    communication
+
+                    creator {
                         id
-                        updated_at
                         name
-                        description
-                        state
-                        workspace_id
+                        email
+                    }
+
+                    groups {
+                        id
+                        title
+                    }
+
+                    item_terminology
+                    items_count
+
+                    items_page(limit: 500) {
                         items {
                             id
                             name
-                            state
-                            created_at
-                            updated_at
                             column_values {
                                 id
-                                title
                                 text
                                 type
                                 value
-                                additional_info
                             }
                         }
                     }
-                }
-        """
 
-    def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
-        return {
-            "board_id": record["id"],
-        }
+                    owners {
+                        id
+                        name
+                        email
+                    }
+
+                    permissions
+                    subscribers {
+                        id
+                        name
+                        email
+                    }
+
+                    tags {
+                        id
+                        name
+                    }
+
+                    team_owners {
+                        id
+                        name
+                    }
+
+                    team_subscribers {
+                        id
+                        name
+                    }
+
+                    top_group {
+                        id
+                        title
+                    }
+
+                    type
+                    url
+
+                    updates {
+                        id
+                        body
+                        created_at
+                        creator {
+                            id
+                            name
+                        }
+                    }
+
+                    views {
+                        id
+                        name
+                        type
+                        settings_str
+                        view_specific_data_str
+                    }
+
+                    workspace {
+                        id
+                        name
+                    }
+
+                    workspace_id
+
+                    columns {
+                        id
+                        title
+                        type
+                    }
+
+                    activity_logs {
+                        id
+                        entity
+                        event
+                        data
+                        user_id
+                        created_at
+                    }
+                }
+            }
+        """
+        return graph_query
+
+    # def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
+    #     return {
+    #         "board_id": record["id"],
+    #     }
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         resp_json = response.json()
         for row in resp_json["data"]["boards"]:
             yield row
 
-    def post_process(self, row: dict, context: Optional[dict] = None) -> dict:
-        row["id"] = int(row["id"])
-        for item in row["items"]:
-            item["id"] = int(item["id"])
-        return row
+    # def post_process(self, row: dict, context: Optional[dict] = None) -> dict:
+    #     row["id"] = int(row["id"])
+    #     for item in row["items"]:
+    #         item["id"] = int(item["id"])
+    #     return row
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]

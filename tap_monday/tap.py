@@ -29,6 +29,11 @@ class TapMonday(Tap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
+            "url_base",
+            th.StringType,
+            description="The api base url"
+        ),
+        th.Property(
             "auth_token",
             th.StringType,
             required=True,
@@ -39,6 +44,11 @@ class TapMonday(Tap):
             th.IntegerType,
             default=10,
             description="The number of boards to fetch at once"
+        ),
+        th.Property(
+            "board_ids",
+            th.ArrayType(th.IntegerType),
+            description="List of ids of boards to fetch at once"
         ),
     ).to_dict()
 
