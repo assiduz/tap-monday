@@ -15,11 +15,11 @@ from tap_monday.streams import (
 )
 
 STREAM_TYPES = [
-    WorkspacesStream,
+    # WorkspacesStream,
     BoardsStream,
-    BoardViewsStream,
-    ColumnsStream,
-    GroupsStream,
+    # BoardViewsStream,
+    # ColumnsStream,
+    # GroupsStream,
 ]
 
 
