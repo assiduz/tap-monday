@@ -15,7 +15,9 @@ from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 class MondayStream(GraphQLStream):
     """Monday stream class."""
 
-    url_base = "https://api.monday.com/v2"
+    @property
+    def url_base(self) -> str:
+        return self.config.get("url_base", "https://api.monday.com/v2")
 
     @property
     def http_headers(self) -> dict:
